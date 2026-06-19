@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gintaras — Learn Lithuanian</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --amber: #D98E27;
+  --amber-light: #F0B860;
+  --forest: #1B3A2E;
+  --forest-light: #28503F;
+  --linen: #F2EAD8;
+  --linen-dark: #E5DAC0;
+  --rust: #A8432F;
+  --ink: #20231F;
+  --paper: #FBF7EE;
+  --ok: #4C7A4A;
+  --shadow: 0 8px 24px rgba(27,58,46,0.15);
+  --shadow-sm: 0 2px 8px rgba(27,58,46,0.10);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'Manrope', sans-serif;
+  background: var(--linen);
+  color: var(--ink);
+  overflow-x:hidden;
+}
+h1,h2,h3,.display{
+  font-family:'Fraunces', serif;
+  font-weight:700;
+  letter-spacing:-0.01em;
+}
+button{font-family:inherit; cursor:pointer; border:none; background:none;}
+button:focus-visible, .pressable:focus-visible{outline:3px solid var(--amber); outline-offset:2px;}
+@media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;} }
+
+#app{max-width:480px; margin:0 auto; min-height:100vh; background:var(--paper); position:relative; box-shadow:0 0 40px rgba(0,0,0,0.08);}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 20px 10px;
+  background:var(--forest);
+  color:var(--linen);
+  position:sticky; top:0; z-index:20;
+}
+.topbar .brand{display:flex; align-items:center; gap:8px;}
+.topbar .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--amber); box-shadow:0 0 0 3px rgba(217,142,39,0.25);}
+.topbar .brand-name{font-family:'Fraunces',serif; font-weight:700; font-size:19px; letter-spacing:-0.01em;}
+.stat-pill{
+  display:flex; align-items:center; gap:5px;
+  background:rgba(255,255,255,0.08);
+  border-radius:999px; padding:6px 12px; font-weight:700; font-size:14px;
+}
+.stat-row{display:flex; gap:8px;}
+
+/* ---------- Sash pattern progress bar (signature element) ---------- */
+.sash-wrap{padding:14px 20px 8px; background:var(--forest);}
+.sash{
+  display:flex; gap:3px; height:14px; border-radius:8px; overflow:hidden;
+  background: var(--forest-light);
+}
+.sash-seg{flex:1; position:relative; background: rgba(255,255,255,0.07);}
+.sash-seg.filled{ background: repeating-linear-gradient(135deg, var(--amber) 0 6px, var(--amber-light) 6px 12px); }
+.sash-seg.filled.current{ background: repeating-linear-gradient(135deg, var(--rust) 0 6px, var(--amber) 6px 12px); }
+
+/* ---------- Screens ---------- */
+.screen{display:none; padding:24px 20px 100px;}
+.screen.active{display:block; animation: fadein .25s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
+
+/* ---------- Home screen ---------- */
+.hero{
+  background: linear-gradient(160deg, var(--forest) 0%, var(--forest-light) 100%);
+  border-radius:20px; padding:26px 22px; color:var(--linen); margin-bottom:22px;
+  position:relative; overflow:hidden;
+}
+.hero::after{
+  content:""; position:absolute; right:-30px; top:-30px; width:140px; height:140px; border-radius:50%;
+  background: radial-gradient(circle, rgba(217,142,39,0.35), transparent 70%);
+}
+.hero .eyebrow{font-size:12px; text-transform:uppercase; letter-spacing:0.14em; color:var(--amber-light); font-weight:700; margin-bottom:6px;}
+.hero h1{font-size:26px; margin:0 0 8px; color:#fff;}
+.hero p{margin:0; font-size:14.5px; color:rgba(242,234,216,0.85); line-height:1.5;}
+
+.section-label{
+  font-size:12px; text-transform:uppercase; letter-spacing:0.12em; font-weight:800; color:var(--forest);
+  opacity:0.65; margin:26px 0 12px;
+}
+
+.unit-grid{display:flex; flex-direction:column; gap:12px;}
+.unit-card{
+  display:flex; align-items:center; gap:14px;
+  background:#fff; border:1px solid var(--linen-dark); border-radius:16px; padding:16px;
+  box-shadow: var(--shadow-sm);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.unit-card.locked{opacity:0.5;}
+.unit-card:not(.locked):active{transform:scale(0.98);}
+.unit-icon{
+  width:48px; height:48px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:22px;
+  background: var(--linen);
+}
+.unit-card.done .unit-icon{background: var(--ok); color:#fff;}
+.unit-card.current .unit-icon{background: var(--amber); color:#fff;}
+.unit-info{flex:1; min-width:0;}
+.unit-info .u-title{font-family:'Fraunces',serif; font-weight:700; font-size:16px; margin-bottom:2px;}
+.unit-info .u-sub{font-size:12.5px; color:#6b6f63;}
+.unit-arrow{color:var(--amber); font-size:18px;}
+
+/* ---------- Game card (flashcard / quiz / match) ---------- */
+.game-header{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+.back-btn{
+  width:36px; height:36px; border-radius:10px; background:#fff; border:1px solid var(--linen-dark);
+  display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--forest);
+}
+.game-title{font-size:15px; font-weight:700; color:var(--forest);}
+
+.flash-card{
+  background:#fff; border-radius:22px; padding:40px 24px; text-align:center;
+  box-shadow:var(--shadow); border:1px solid var(--linen-dark);
+  min-height:230px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  position:relative; cursor:pointer; perspective:1000px;
+}
+.flash-word{font-family:'Fraunces',serif; font-size:34px; font-weight:700; color:var(--forest);}
+.flash-translit{font-size:13px; color:var(--rust); font-weight:600; letter-spacing:0.03em;}
+.flash-hint{font-size:12.5px; color:#9a9588; margin-top:14px;}
+.flash-back{font-size:19px; color:var(--ink); font-weight:600;}
+.flash-emoji{font-size:48px; margin-bottom:4px;}
+
+.btn-row{display:flex; gap:10px; margin-top:20px;}
+.btn{
+  flex:1; padding:15px; border-radius:14px; font-weight:700; font-size:15px;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  transition: transform .12s ease;
+}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--amber); color:#fff;}
+.btn-ghost{background:#fff; color:var(--forest); border:1.5px solid var(--linen-dark);}
+.btn-block{width:100%;}
+
+/* Quiz */
+.quiz-prompt{
+  background:#fff; border-radius:18px; padding:26px 22px; text-align:center; margin-bottom:20px;
+  box-shadow:var(--shadow-sm); border:1px solid var(--linen-dark);
+}
+.quiz-q-label{font-size:12px; text-transform:uppercase; letter-spacing:0.1em; color:var(--rust); font-weight:700; margin-bottom:10px;}
+.quiz-word{font-family:'Fraunces',serif; font-size:30px; font-weight:700; color:var(--forest);}
+.option-grid{display:flex; flex-direction:column; gap:10px;}
+.option{
+  background:#fff; border:2px solid var(--linen-dark); border-radius:14px; padding:15px 16px;
+  font-size:15.5px; font-weight:600; text-align:left; color:var(--ink);
+  transition: all .15s ease;
+}
+.option:active{transform:scale(0.98);}
+.option.correct{background:var(--ok); border-color:var(--ok); color:#fff;}
+.option.wrong{background:var(--rust); border-color:var(--rust); color:#fff;}
+.option.dim{opacity:0.4;}
+
+/* Match game */
+.match-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.match-tile{
+  background:#fff; border:2px solid var(--linen-dark); border-radius:14px; padding:16px 10px;
+  font-size:14.5px; font-weight:700; text-align:center; min-height:64px;
+  display:flex; align-items:center; justify-content:center; color:var(--ink);
+}
+.match-tile.selected{border-color:var(--amber); background:rgba(217,142,39,0.1);}
+.match-tile.matched{background:var(--ok); border-color:var(--ok); color:#fff; opacity:0.55;}
+.match-tile.shake{animation:shake .3s;}
+@keyframes shake{0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}}
+
+/* Results */
+.result-wrap{text-align:center; padding:30px 10px;}
+.result-emoji{font-size:56px; margin-bottom:10px;}
+.result-title{font-family:'Fraunces',serif; font-size:26px; font-weight:700; color:var(--forest); margin-bottom:6px;}
+.result-sub{color:#6b6f63; font-size:14.5px; margin-bottom:24px;}
+.result-stats{display:flex; gap:10px; justify-content:center; margin-bottom:28px;}
+.result-stat{background:#fff; border-radius:14px; padding:14px 18px; box-shadow:var(--shadow-sm); border:1px solid var(--linen-dark);}
+.result-stat .num{font-family:'Fraunces',serif; font-size:22px; font-weight:700; color:var(--amber);}
+.result-stat .lbl{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:#9a9588; font-weight:700;}
+
+/* ---------- Bottom nav ---------- */
+.bottom-nav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:480px; background:#fff; border-top:1px solid var(--linen-dark);
+  display:flex; padding:10px 8px calc(10px + env(safe-area-inset-bottom));
+  z-index:30;
+}
+.nav-btn{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:6px 4px; border-radius:12px; color:#9a9588; font-size:10.5px; font-weight:700;
+}
+.nav-btn.active{color:var(--amber);}
+.nav-icon{font-size:20px;}
+
+/* ---------- Ad slot (clearly labeled, simulated) ---------- */
+.ad-slot{
+  background: repeating-linear-gradient(45deg, #efe7d2, #efe7d2 10px, #e8dfc6 10px, #e8dfc6 20px);
+  border:1.5px dashed #c9bd9b; border-radius:14px; padding:14px; text-align:center; margin:20px 0;
+  font-size:11px; color:#8a8268; font-weight:700; letter-spacing:0.05em;
+}
+.ad-slot .ad-tag{display:inline-block; background:#fff; padding:2px 8px; border-radius:6px; font-size:9.5px; margin-bottom:6px; color:#a89a6e;}
+
+/* ---------- Profile screen ---------- */
+.profile-head{display:flex; align-items:center; gap:16px; margin-bottom:24px;}
+.avatar{
+  width:64px; height:64px; border-radius:50%; background:var(--amber);
+  display:flex; align-items:center; justify-content:center; font-size:28px; color:#fff;
+  font-family:'Fraunces',serif; font-weight:700; box-shadow:var(--shadow-sm);
+}
+.stats-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;}
+.stat-card{background:#fff; border-radius:16px; padding:18px; border:1px solid var(--linen-dark); box-shadow:var(--shadow-sm);}
+.stat-card .icon{font-size:22px; margin-bottom:8px;}
+.stat-card .val{font-family:'Fraunces',serif; font-size:24px; font-weight:700; color:var(--forest);}
+.stat-card .lbl{font-size:12px; color:#9a9588; font-weight:600;}
+
+.badge-row{display:flex; gap:10px; flex-wrap:wrap;}
+.badge{
+  background:#fff; border:1px solid var(--linen-dark); border-radius:12px; padding:10px 12px;
+  display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--forest);
+}
+.badge.locked{opacity:0.35;}
+
+.toast{
+  position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+  background:var(--forest); color:#fff; padding:12px 22px; border-radius:999px;
+  font-weight:700; font-size:14px; box-shadow:var(--shadow); z-index:50;
+  display:flex; align-items:center; gap:8px; opacity:0; pointer-events:none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span><span class="brand-name">Gintaras</span></div>
+    <div class="stat-row">
+      <div class="stat-pill">🔥 <span id="streakCount">0</span></div>
+      <div class="stat-pill">⭐ <span id="xpCount">0</span></div>
+    </div>
+  </div>
+  <div class="sash-wrap"><div class="sash" id="sashBar"></div></div>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="hero">
+      <div class="eyebrow">Labas! Welcome back</div>
+      <h1>Learn Lithuanian, one word at a time</h1>
+      <p>Amber-coded lessons, quick games, and real words you'll actually use in Vilnius.</p>
+    </div>
+
+    <div class="section-label">Your path</div>
+    <div class="unit-grid" id="unitGrid"></div>
+
+    <div class="ad-slot"><span class="ad-tag">AD SLOT</span><br>Banner ad placeholder — wire up AdMob here</div>
+  </div>
+
+  <!-- LESSON HUB (per unit) -->
+  <div class="screen" id="screen-lesson">
+    <div class="game-header">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <div class="game-title" id="lessonUnitTitle">Unit</div>
+    </div>
+    <div class="unit-grid" id="lessonModeGrid"></div>
+  </div>
+
+  <!-- FLASHCARDS -->
+  <div class="screen" id="screen-flash">
+    <div class="game-header">
+      <button class="back-btn" onclick="showLessonHub()">←</button>
+      <div class="game-title">Flashcards · <span id="flashProgress">1/8</span></div>
+    </div>
+    <div class="flash-card" id="flashCard" onclick="flipCard()"></div>
+    <div class="flash-hint">Tap the card to flip</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="prevFlash()">Back</button>
+      <button class="btn btn-primary" onclick="nextFlash()">Next →</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="game-header">
+      <button class="back-btn" onclick="showLessonHub()">←</button>
+      <div class="game-title">Quiz · <span id="quizProgress">1/8</span></div>
+    </div>
+    <div class="quiz-prompt">
+      <div class="quiz-q-label" id="quizQLabel">What does this mean?</div>
+      <div class="quiz-word" id="quizWord">labas</div>
+    </div>
+    <div class="option-grid" id="quizOptions"></div>
+  </div>
+
+  <!-- MATCH -->
+  <div class="screen" id="screen-match">
+    <div class="game-header">
+      <button class="back-btn" onclick="showLessonHub()">←</button>
+      <div class="game-title">Match pairs · <span id="matchProgress">0/6</span></div>
+    </div>
+    <div class="match-grid" id="matchGrid"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="result-wrap">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div class="result-title" id="resultTitle">Puiku! Great job!</div>
+      <div class="result-sub" id="resultSub">You finished the lesson</div>
+      <div class="result-stats">
+        <div class="result-stat"><div class="num" id="resultXP">+10</div><div class="lbl">XP</div></div>
+        <div class="result-stat"><div class="num" id="resultAcc">100%</div><div class="lbl">Accuracy</div></div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="goHome()">Continue</button>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="screen" id="screen-profile">
+    <div class="profile-head">
+      <div class="avatar" id="avatarInitial">L</div>
+      <div>
+        <div style="font-family:'Fraunces',serif; font-weight:700; font-size:20px;">Learner</div>
+        <div style="color:#9a9588; font-size:13px;">Lithuanian · Beginner path</div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="icon">🔥</div><div class="val" id="profStreak">0</div><div class="lbl">Day streak</div></div>
+      <div class="stat-card"><div class="icon">⭐</div><div class="val" id="profXP">0</div><div class="lbl">Total XP</div></div>
+      <div class="stat-card"><div class="icon">📚</div><div class="val" id="profWords">0</div><div class="lbl">Words learned</div></div>
+      <div class="stat-card"><div class="icon">✅</div><div class="val" id="profUnits">0</div><div class="lbl">Units done</div></div>
+    </div>
+    <div class="section-label">Badges</div>
+    <div class="badge-row" id="badgeRow"></div>
+    <div class="ad-slot" style="margin-top:24px;"><span class="ad-tag">AD SLOT</span><br>Interstitial trigger point — show ad here between sessions</div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="switchTab('home')"><span class="nav-icon">🏠</span>Learn</button>
+    <button class="nav-btn" id="nav-profile" onclick="switchTab('profile')"><span class="nav-icon">👤</span>Profile</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
