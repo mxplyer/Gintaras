@@ -97,6 +97,70 @@ const UNITS = [
       { lt: 'Jūra', en: 'Sea', emoji: '🌊', note: 'YOO-ra' },
       { lt: 'Upė', en: 'River', emoji: '🏞️', note: 'OO-peh' },
     ]
+  },
+  {
+    id: 'colors',
+    title: 'Colors',
+    icon: '🎨',
+    sub: 'Describe the world around you',
+    words: [
+      { lt: 'Raudona', en: 'Red', emoji: '🔴', note: 'row-do-NA' },
+      { lt: 'Mėlyna', en: 'Blue', emoji: '🔵', note: 'meh-lee-NA' },
+      { lt: 'Žalia', en: 'Green', emoji: '🟢', note: 'zha-LYA' },
+      { lt: 'Geltona', en: 'Yellow', emoji: '🟡', note: 'gel-to-NA' },
+      { lt: 'Juoda', en: 'Black', emoji: '⚫', note: 'yoo-o-DA' },
+      { lt: 'Balta', en: 'White', emoji: '⚪', note: 'bal-TA' },
+      { lt: 'Ruda', en: 'Brown', emoji: '🟤', note: 'roo-DA' },
+      { lt: 'Oranžinė', en: 'Orange', emoji: '🟠', note: 'o-RAN-zhi-neh' },
+    ]
+  },
+  {
+    id: 'time',
+    title: 'Time & Days',
+    icon: '🕒',
+    sub: 'Talk about when',
+    words: [
+      { lt: 'Šiandien', en: 'Today', emoji: '📅', note: 'shee-AN-dee-en' },
+      { lt: 'Rytoj', en: 'Tomorrow', emoji: '➡️', note: 'ree-TOY' },
+      { lt: 'Vakar', en: 'Yesterday', emoji: '⬅️', note: 'VA-kar' },
+      { lt: 'Pirmadienis', en: 'Monday', emoji: '1️⃣', note: 'peer-ma-dee-EH-nis' },
+      { lt: 'Penktadienis', en: 'Friday', emoji: '5️⃣', note: 'penk-ta-dee-EH-nis' },
+      { lt: 'Savaitė', en: 'Week', emoji: '🗓️', note: 'sa-VYE-teh' },
+      { lt: 'Valanda', en: 'Hour', emoji: '⏰', note: 'va-lan-DA' },
+      { lt: 'Dabar', en: 'Now', emoji: '⌛', note: 'da-BAR' },
+    ]
+  },
+  {
+    id: 'body',
+    title: 'Body Parts',
+    icon: '🧍',
+    sub: 'Head to toe',
+    words: [
+      { lt: 'Galva', en: 'Head', emoji: '🗣️', note: 'gal-VA' },
+      { lt: 'Akis', en: 'Eye', emoji: '👁️', note: 'a-KIS' },
+      { lt: 'Ranka', en: 'Hand / Arm', emoji: '✋', note: 'ran-KA' },
+      { lt: 'Koja', en: 'Leg / Foot', emoji: '🦵', note: 'ko-YA' },
+      { lt: 'Širdis', en: 'Heart', emoji: '❤️', note: 'shir-DIS' },
+      { lt: 'Burna', en: 'Mouth', emoji: '👄', note: 'boor-NA' },
+      { lt: 'Ausis', en: 'Ear', emoji: '👂', note: 'ow-SIS' },
+      { lt: 'Nosis', en: 'Nose', emoji: '👃', note: 'no-SIS' },
+    ]
+  },
+  {
+    id: 'verbs',
+    title: 'Everyday Verbs',
+    icon: '🏃',
+    sub: 'Common actions',
+    words: [
+      { lt: 'Valgyti', en: 'To eat', emoji: '🍽️', note: 'val-GEE-tee' },
+      { lt: 'Gerti', en: 'To drink', emoji: '🥤', note: 'GER-tee' },
+      { lt: 'Eiti', en: 'To go / walk', emoji: '🚶', note: 'AY-tee' },
+      { lt: 'Miegoti', en: 'To sleep', emoji: '😴', note: 'mee-eh-GO-tee' },
+      { lt: 'Kalbėti', en: 'To speak', emoji: '💬', note: 'kal-BEH-tee' },
+      { lt: 'Skaityti', en: 'To read', emoji: '📖', note: 'skai-TEE-tee' },
+      { lt: 'Dirbti', en: 'To work', emoji: '💼', note: 'DIRB-tee' },
+      { lt: 'Žaisti', en: 'To play', emoji: '🎮', note: 'ZHAI-stee' },
+    ]
   }
 ];
 

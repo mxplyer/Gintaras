@@ -12,10 +12,72 @@ let STATE = {
   unitProgress: {}, // unitId -> { flash: bool, quiz: bool, match: bool }
 };
 
-UNITS.forEach(u => STATE.unitProgress[u.id] = { flash: false, quiz: false, match: false });
+UNITS.forEach(u => STATE.unitProgress[u.id] = { flash: false, quiz: false, match: false, listen: false });
 
 let currentUnit = null;
 let currentMode = null;
+
+// ---------- Daily reminder notifications ----------
+// Uses the Service Worker + Notification API, both free, built into the browser/OS.
+// No backend, no push server needed for a local daily reminder while the app is installed.
+let reminderEnabled = false;
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').catch(() => {
+    // Fails silently if running from file:// or an unsupported context (e.g. this preview).
+    // Works correctly once hosted on https:// (GitHub Pages) or packaged as an app.
+  });
+}
+
+function notificationsSupported() {
+  return 'Notification' in window && 'serviceWorker' in navigator;
+}
+
+async function enableDailyReminder() {
+  if (!notificationsSupported()) {
+    showToast('Reminders need the installed app or a hosted link');
+    return false;
+  }
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    showToast('Notifications permission was not granted');
+    return false;
+  }
+  reminderEnabled = true;
+  scheduleNextReminder();
+  showToast('Daily reminder turned on 🔔');
+  return true;
+}
+
+function disableDailyReminder() {
+  reminderEnabled = false;
+  if (reminderTimer) clearTimeout(reminderTimer);
+  showToast('Daily reminder turned off');
+}
+
+let reminderTimer = null;
+function scheduleNextReminder() {
+  if (!reminderEnabled) return;
+  if (reminderTimer) clearTimeout(reminderTimer);
+
+  // Fires once every 24 hours while the app is installed and has been opened at least
+  // once that day. True "app fully closed" delivery requires native push (a later upgrade);
+  // this covers the common case of a phone with the app installed in the background.
+  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  reminderTimer = setTimeout(() => {
+    triggerReminderNotification();
+    scheduleNextReminder();
+  }, TWENTY_FOUR_HOURS);
+}
+
+function triggerReminderNotification() {
+  if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+  navigator.serviceWorker.controller.postMessage({
+    type: 'SHOW_STREAK_REMINDER',
+    body: `Your ${STATE.streak}-day streak is waiting! Keep it alive with a quick lesson.`,
+  });
+}
 
 // ---------- Init ----------
 function init() {
@@ -23,6 +85,7 @@ function init() {
   renderSash();
   updateTopStats();
   renderProfile();
+  registerServiceWorker();
 }
 
 function updateTopStats() {
@@ -36,8 +99,8 @@ function renderSash() {
   UNITS.forEach((u, i) => {
     const seg = document.createElement('div');
     const prog = STATE.unitProgress[u.id];
-    const done = prog.flash && prog.quiz && prog.match;
-    const started = prog.flash || prog.quiz || prog.match;
+    const done = prog.flash && prog.quiz && prog.listen && prog.match;
+    const started = prog.flash || prog.quiz || prog.listen || prog.match;
     seg.className = 'sash-seg' + (done ? ' filled' : '') + (started && !done ? ' filled current' : '');
     bar.appendChild(seg);
   });
@@ -56,7 +119,7 @@ function renderUnitGrid() {
   UNITS.forEach((u, idx) => {
     const unlocked = isUnitUnlocked(idx);
     const p = STATE.unitProgress[u.id];
-    const done = p.flash && p.quiz && p.match;
+    const done = p.flash && p.quiz && p.listen && p.match;
     const card = document.createElement('div');
     card.className = 'unit-card' + (unlocked ? '' : ' locked') + (done ? ' done' : '') + (unlocked && !done ? ' current' : '');
     card.innerHTML = `
@@ -85,7 +148,8 @@ function showLessonHub() {
   const modes = [
     { key: 'flash', icon: '🃏', title: 'Flashcards', sub: 'Learn the words', done: p.flash, fn: startFlash },
     { key: 'quiz', icon: '❓', title: 'Quiz', sub: 'Test yourself', done: p.quiz, fn: startQuiz, locked: !p.flash },
-    { key: 'match', icon: '🔗', title: 'Match pairs', sub: 'Quick game round', done: p.match, fn: startMatch, locked: !p.quiz },
+    { key: 'listen', icon: '🎧', title: 'Listening practice', sub: 'Hear it, pick the spelling', done: p.listen, fn: startListen, locked: !p.quiz },
+    { key: 'match', icon: '🔗', title: 'Match pairs', sub: 'Quick game round', done: p.match, fn: startMatch, locked: !p.listen },
   ];
   grid.innerHTML = '';
   modes.forEach(m => {
@@ -123,6 +187,28 @@ function switchTab(tab) {
   else { showScreen('screen-profile'); renderProfile(); }
 }
 
+// ---------- Pronunciation (built into the browser, free, no API needed) ----------
+function speak(text) {
+  if (!('speechSynthesis' in window)) {
+    showToast('Sound not supported on this device');
+    return;
+  }
+  window.speechSynthesis.cancel(); // stop any word currently being spoken
+  const utter = new SpeechSynthesisUtterance(text);
+  // Try to use a Lithuanian voice if the device has one installed.
+  // Most phones don't ship Lithuanian by default, so we fall back gracefully.
+  const voices = window.speechSynthesis.getVoices();
+  const ltVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('lt'));
+  if (ltVoice) {
+    utter.voice = ltVoice;
+    utter.lang = ltVoice.lang;
+  } else {
+    utter.lang = 'lt-LT'; // ask for Lithuanian phonetics even without a dedicated voice
+  }
+  utter.rate = 0.85; // slightly slower, easier for learners to catch
+  window.speechSynthesis.speak(utter);
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -149,9 +235,12 @@ function renderFlash() {
   card.innerHTML = `
     <div class="flash-emoji">${word.emoji}</div>
     <div class="flash-word">${word.lt}</div>
+    <button class="speak-btn" aria-label="Hear pronunciation">🔊 Hear it</button>
     <div class="flash-translit">${word.note}</div>
-    <div class="flash-hint">Tap to reveal meaning</div>
+    <div class="flash-hint">Tap the card to flip</div>
   `;
+  card.querySelector('.speak-btn').onclick = (e) => { e.stopPropagation(); speak(word.lt); };
+  speak(word.lt); // auto-play pronunciation when the card appears
 }
 
 function flipCard() {
@@ -162,8 +251,10 @@ function flipCard() {
     card.innerHTML = `
       <div class="flash-emoji">${word.emoji}</div>
       <div class="flash-back">${word.en}</div>
+      <button class="speak-btn" aria-label="Hear pronunciation">🔊 Hear it</button>
       <div class="flash-hint">${word.lt} · ${word.note}</div>
     `;
+    card.querySelector('.speak-btn').onclick = (e) => { e.stopPropagation(); speak(word.lt); };
   } else {
     renderFlash();
   }
@@ -210,7 +301,9 @@ function startQuiz() {
 function renderQuiz() {
   const word = quizOrder[quizIdx];
   document.getElementById('quizProgress').textContent = `${quizIdx + 1}/${quizOrder.length}`;
-  document.getElementById('quizWord').textContent = word.lt;
+  document.getElementById('quizWord').innerHTML = `${word.lt} <button class="speak-btn-inline" aria-label="Hear pronunciation">🔊</button>`;
+  document.querySelector('#quizWord .speak-btn-inline').onclick = () => speak(word.lt);
+  speak(word.lt); // auto-play when question appears
 
   // build 4 options: correct + 3 distractors from same unit
   const distractors = shuffle(currentUnit.words.filter(w => w.lt !== word.lt)).slice(0, 3).map(w => w.en);
@@ -250,6 +343,67 @@ function finishQuiz() {
   awardXP(xpEarned);
   if (acc === 100) STATE.hadPerfectQuiz = true;
   showResult({ title: acc === 100 ? 'Perfect score!' : 'Quiz complete!', sub: `${quizCorrect} of ${quizOrder.length} correct`, xp: xpEarned, acc });
+}
+
+// ---------- LISTENING PRACTICE ----------
+let listenIdx = 0;
+let listenCorrect = 0;
+let listenOrder = [];
+
+function startListen() {
+  listenIdx = 0;
+  listenCorrect = 0;
+  listenOrder = shuffle(currentUnit.words);
+  showScreen('screen-listen');
+  renderListen();
+}
+
+function renderListen() {
+  const word = listenOrder[listenIdx];
+  document.getElementById('listenProgress').textContent = `${listenIdx + 1}/${listenOrder.length}`;
+
+  const distractors = shuffle(currentUnit.words.filter(w => w.lt !== word.lt)).slice(0, 3).map(w => w.lt);
+  const options = shuffle([word.lt, ...distractors]);
+
+  const optGrid = document.getElementById('listenOptions');
+  optGrid.innerHTML = '';
+  let answered = false;
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.onclick = () => {
+      if (answered) return;
+      answered = true;
+      const correct = opt === word.lt;
+      btn.classList.add(correct ? 'correct' : 'wrong');
+      if (correct) listenCorrect++;
+      else {
+        [...optGrid.children].forEach(c => { if (c.textContent === word.lt) c.classList.add('correct'); });
+      }
+      [...optGrid.children].forEach(c => { if (c !== btn) c.classList.add('dim'); });
+      setTimeout(() => {
+        if (listenIdx < listenOrder.length - 1) { listenIdx++; renderListen(); }
+        else finishListen();
+      }, 700);
+    };
+    optGrid.appendChild(btn);
+  });
+
+  speak(word.lt); // play the word automatically so the learner can guess from sound alone
+}
+
+function replayListenAudio() {
+  speak(listenOrder[listenIdx].lt);
+}
+
+function finishListen() {
+  STATE.unitProgress[currentUnit.id].listen = true;
+  const acc = Math.round((listenCorrect / listenOrder.length) * 100);
+  const xpEarned = 5 + listenCorrect * 2;
+  awardXP(xpEarned);
+  if (acc === 100) STATE.hadPerfectQuiz = true;
+  showResult({ title: acc === 100 ? 'Great ear!' : 'Listening done!', sub: `${listenCorrect} of ${listenOrder.length} correct`, xp: xpEarned, acc });
 }
 
 // ---------- MATCH ----------
@@ -309,7 +463,7 @@ function selectMatchTile(idx) {
         STATE.unitProgress[currentUnit.id].match = true;
         const newUnitsDone = UNITS.filter(u => {
           const p = STATE.unitProgress[u.id];
-          return p.flash && p.quiz && p.match;
+          return p.flash && p.quiz && p.listen && p.match;
         }).length;
         if (newUnitsDone > STATE.unitsCompleted) {
           STATE.unitsCompleted = newUnitsDone;
@@ -358,11 +512,32 @@ function checkBadges() {
   });
 }
 
+async function toggleReminder() {
+  const btn = document.getElementById('reminderToggle');
+  if (!reminderEnabled) {
+    const success = await enableDailyReminder();
+    if (success) {
+      btn.classList.add('on');
+      btn.setAttribute('aria-pressed', 'true');
+    }
+  } else {
+    disableDailyReminder();
+    btn.classList.remove('on');
+    btn.setAttribute('aria-pressed', 'false');
+  }
+}
+
 function renderProfile() {
   document.getElementById('profStreak').textContent = STATE.streak;
   document.getElementById('profXP').textContent = STATE.xp;
   document.getElementById('profWords').textContent = STATE.wordsLearned;
   document.getElementById('profUnits').textContent = STATE.unitsCompleted;
+
+  const reminderBtn = document.getElementById('reminderToggle');
+  if (reminderBtn) {
+    reminderBtn.classList.toggle('on', reminderEnabled);
+    reminderBtn.setAttribute('aria-pressed', String(reminderEnabled));
+  }
 
   const row = document.getElementById('badgeRow');
   row.innerHTML = '';
