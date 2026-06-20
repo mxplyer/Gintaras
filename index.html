@@ -192,6 +192,20 @@ button:focus-visible, .pressable:focus-visible{outline:3px solid var(--amber); o
 .btn-ghost{background:#fff; color:var(--forest); border:1.5px solid var(--linen-dark);}
 .btn-block{width:100%;}
 
+.btn-watch-ad{
+  background: linear-gradient(135deg, #5B3FA8, #8A5FD6);
+  color:#fff; box-shadow:0 6px 16px rgba(91,63,168,0.3);
+}
+.btn-watch-ad:active{transform:scale(0.97);}
+
+.ad-sim-box{
+  background:#1a1a2e; border-radius:20px; padding:50px 24px; text-align:center; color:#fff;
+  border:2px dashed #5B3FA8;
+}
+.ad-sim-tag{font-size:10px; letter-spacing:0.1em; color:#8A5FD6; font-weight:700; margin-bottom:18px;}
+.ad-sim-icon{font-size:48px; margin-bottom:14px;}
+.ad-sim-text{font-size:16px; font-weight:600;}
+
 /* Quiz */
 .quiz-prompt{
   background:#fff; border-radius:18px; padding:26px 22px; text-align:center; margin-bottom:20px;
@@ -406,8 +420,22 @@ button:focus-visible, .pressable:focus-visible{outline:3px solid var(--amber); o
       <div class="result-emoji">🔄</div>
       <div class="result-title">Let's try that again</div>
       <div class="result-sub" id="restartSub">You've made 5 mistakes — let's go through it again from the start.</div>
-      <button class="btn btn-primary btn-block" id="restartBtn">Restart exercise</button>
+      <button class="btn btn-watch-ad btn-block" id="watchAdBtn" style="display:none;">
+        <span>🎬</span> Watch a short ad to continue
+      </button>
+      <button class="btn btn-primary btn-block" id="restartBtn" style="margin-top:10px;">Restart exercise</button>
       <button class="btn btn-ghost btn-block" style="margin-top:10px;" onclick="showLessonHub()">Back to lesson menu</button>
+    </div>
+  </div>
+
+  <!-- AD SIMULATOR (placeholder for real rewarded video ad) -->
+  <div class="screen" id="screen-ad-simulator">
+    <div class="result-wrap">
+      <div class="ad-sim-box">
+        <div class="ad-sim-tag">SIMULATED AD — swap in real AdMob here</div>
+        <div class="ad-sim-icon">🎬</div>
+        <div class="ad-sim-text">Your reward in <span id="adCountdown">3</span>...</div>
+      </div>
     </div>
   </div>
 

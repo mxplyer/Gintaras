@@ -49,14 +49,64 @@ function updateMistakeDots() {
   }
 }
 
-function showRestartScreen(restartFn) {
+function showRestartScreen(restartFn, continueFn, returnScreenId) {
   document.getElementById('restartSub').textContent =
     `You've made ${MAX_MISTAKES} mistakes — let's go through it again from the start.`;
   document.getElementById('restartBtn').onclick = () => {
     resetMistakes();
     restartFn();
   };
+  const watchBtn = document.getElementById('watchAdBtn');
+  if (continueFn) {
+    watchBtn.style.display = 'flex';
+    watchBtn.onclick = () => showRewardedAd(continueFn, returnScreenId);
+  } else {
+    watchBtn.style.display = 'none';
+  }
   showScreen('screen-restart');
+}
+
+// ---------- Rewarded video ads ----------
+// PLACEHOLDER IMPLEMENTATION: simulates the watch-an-ad-for-a-reward flow so the full
+// UX is built and ready. To go live, replace showRewardedAd()'s body with your real
+// AdMob rewarded ad call (see comment inside) once you have an AdMob Ad Unit ID.
+let watchAdCallback = null;
+let watchAdReturnScreen = null;
+
+function showRewardedAd(continueFn, returnScreenId) {
+  watchAdCallback = continueFn;
+  watchAdReturnScreen = returnScreenId;
+  // ---- REAL ADMOB INTEGRATION GOES HERE ----
+  // Example (once packaged with a real ad SDK):
+  //   AdMob.showRewardedAd({ adUnitId: 'YOUR_AD_UNIT_ID' })
+  //     .then(() => onRewardedAdComplete())
+  //     .catch(() => showToast('Ad not available right now'));
+  // For now, this simulates a 3-second ad so the full flow can be tested:
+  showScreen('screen-ad-simulator');
+  let secondsLeft = 3;
+  const countEl = document.getElementById('adCountdown');
+  countEl.textContent = secondsLeft;
+  const timer = setInterval(() => {
+    secondsLeft--;
+    countEl.textContent = secondsLeft;
+    if (secondsLeft <= 0) {
+      clearInterval(timer);
+      onRewardedAdComplete();
+    }
+  }, 1000);
+}
+
+function onRewardedAdComplete() {
+  resetMistakes();
+  if (watchAdReturnScreen) {
+    showScreen(watchAdReturnScreen); // make the game screen visible again before re-rendering its content
+  }
+  if (watchAdCallback) {
+    const fn = watchAdCallback;
+    watchAdCallback = null;
+    fn();
+  }
+  showToast('🎁 Bonus unlocked! Continuing...');
 }
 
 // ---------- Daily reminder notifications ----------
@@ -370,7 +420,7 @@ function renderQuiz() {
       else {
         // reveal the right one
         [...optGrid.children].forEach(c => { if (c.textContent === word.en) c.classList.add('correct'); });
-        limitHit = registerMistake(() => showRestartScreen(startQuiz));
+        limitHit = registerMistake(() => showRestartScreen(startQuiz, () => renderQuiz(), 'screen-quiz'));
       }
       [...optGrid.children].forEach(c => { if (c !== btn) c.classList.add('dim'); });
       if (limitHit) return; // showRestartScreen will take over after its own delay
@@ -430,7 +480,7 @@ function renderListen() {
       if (correct) listenCorrect++;
       else {
         [...optGrid.children].forEach(c => { if (c.textContent === word.lt) c.classList.add('correct'); });
-        limitHit = registerMistake(() => showRestartScreen(startListen));
+        limitHit = registerMistake(() => showRestartScreen(startListen, () => renderListen(), 'screen-listen'));
       }
       [...optGrid.children].forEach(c => { if (c !== btn) c.classList.add('dim'); });
       if (limitHit) return;
@@ -531,7 +581,7 @@ function selectMatchTile(idx) {
     tiles[idx].classList.add('selected');
     tiles[matchSelected].classList.add('shake');
     tiles[idx].classList.add('shake');
-    const limitHit = registerMistake(() => showRestartScreen(startMatch));
+    const limitHit = registerMistake(() => showRestartScreen(startMatch, () => renderMatch(), 'screen-match'));
     setTimeout(() => {
       tiles[matchSelected].classList.remove('selected', 'shake');
       tiles[idx].classList.remove('selected', 'shake');
