@@ -141,6 +141,13 @@ button:focus-visible, .pressable:focus-visible{outline:3px solid var(--amber); o
 }
 .game-title{font-size:15px; font-weight:700; color:var(--forest);}
 
+.mistake-dots{display:flex; gap:6px; margin-bottom:16px;}
+.mistake-dot{
+  width:11px; height:11px; border-radius:50%; background:var(--linen-dark);
+  border:1.5px solid transparent; transition: all .2s ease;
+}
+.mistake-dot.used{background:var(--rust); transform:scale(1.05);}
+
 .flash-card{
   background:#fff; border-radius:22px; padding:40px 24px; text-align:center;
   box-shadow:var(--shadow); border:1px solid var(--linen-dark);
@@ -360,6 +367,7 @@ button:focus-visible, .pressable:focus-visible{outline:3px solid var(--amber); o
       <button class="back-btn" onclick="showLessonHub()">←</button>
       <div class="game-title">Quiz · <span id="quizProgress">1/8</span></div>
     </div>
+    <div class="mistake-dots" id="mistakeDots"></div>
     <div class="quiz-prompt">
       <div class="quiz-q-label" id="quizQLabel">What does this mean?</div>
       <div class="quiz-word" id="quizWord">labas</div>
@@ -373,6 +381,7 @@ button:focus-visible, .pressable:focus-visible{outline:3px solid var(--amber); o
       <button class="back-btn" onclick="showLessonHub()">←</button>
       <div class="game-title">Listening · <span id="listenProgress">1/8</span></div>
     </div>
+    <div class="mistake-dots" id="mistakeDots"></div>
     <div class="quiz-prompt">
       <div class="quiz-q-label">Listen and pick the word</div>
       <button class="replay-btn" onclick="replayListenAudio()" aria-label="Replay audio">🔊 Play again</button>
@@ -387,7 +396,19 @@ button:focus-visible, .pressable:focus-visible{outline:3px solid var(--amber); o
       <button class="back-btn" onclick="showLessonHub()">←</button>
       <div class="game-title">Match pairs · <span id="matchProgress">0/6</span></div>
     </div>
+    <div class="mistake-dots" id="mistakeDots"></div>
     <div class="match-grid" id="matchGrid"></div>
+  </div>
+
+  <!-- RESTART (shown after 5 mistakes) -->
+  <div class="screen" id="screen-restart">
+    <div class="result-wrap">
+      <div class="result-emoji">🔄</div>
+      <div class="result-title">Let's try that again</div>
+      <div class="result-sub" id="restartSub">You've made 5 mistakes — let's go through it again from the start.</div>
+      <button class="btn btn-primary btn-block" id="restartBtn">Restart exercise</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:10px;" onclick="showLessonHub()">Back to lesson menu</button>
+    </div>
   </div>
 
   <!-- RESULT -->

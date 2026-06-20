@@ -17,6 +17,48 @@ UNITS.forEach(u => STATE.unitProgress[u.id] = { flash: false, quiz: false, match
 let currentUnit = null;
 let currentMode = null;
 
+// ---------- Mistake limit (shared across Quiz, Listening, Match) ----------
+// After 5 wrong answers in a single exercise attempt, the learner is sent back
+// to redo that exercise from the start — encourages real recall instead of guessing through.
+const MAX_MISTAKES = 5;
+let mistakeCount = 0;
+
+function resetMistakes() {
+  mistakeCount = 0;
+  updateMistakeDots();
+}
+
+function registerMistake(onLimitReached) {
+  mistakeCount++;
+  updateMistakeDots();
+  if (mistakeCount >= MAX_MISTAKES) {
+    setTimeout(() => onLimitReached(), 750);
+    return true; // limit hit
+  }
+  return false;
+}
+
+function updateMistakeDots() {
+  const wrap = document.getElementById('mistakeDots');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  for (let i = 0; i < MAX_MISTAKES; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'mistake-dot' + (i < mistakeCount ? ' used' : '');
+    wrap.appendChild(dot);
+  }
+}
+
+function showRestartScreen(restartFn) {
+  document.getElementById('restartSub').textContent =
+    `You've made ${MAX_MISTAKES} mistakes — let's go through it again from the start.`;
+  document.getElementById('restartBtn').onclick = () => {
+    resetMistakes();
+    restartFn();
+  };
+  showScreen('screen-restart');
+}
+
 // ---------- Daily reminder notifications ----------
 // Uses the Service Worker + Notification API, both free, built into the browser/OS.
 // No backend, no push server needed for a local daily reminder while the app is installed.
@@ -294,11 +336,13 @@ function startQuiz() {
   quizIdx = 0;
   quizCorrect = 0;
   quizOrder = shuffle(currentUnit.words);
+  resetMistakes();
   showScreen('screen-quiz');
   renderQuiz();
 }
 
 function renderQuiz() {
+  updateMistakeDots();
   const word = quizOrder[quizIdx];
   document.getElementById('quizProgress').textContent = `${quizIdx + 1}/${quizOrder.length}`;
   document.getElementById('quizWord').innerHTML = `${word.lt} <button class="speak-btn-inline" aria-label="Hear pronunciation">🔊</button>`;
@@ -321,12 +365,15 @@ function renderQuiz() {
       answered = true;
       const correct = opt === word.en;
       btn.classList.add(correct ? 'correct' : 'wrong');
+      let limitHit = false;
       if (correct) quizCorrect++;
       else {
         // reveal the right one
         [...optGrid.children].forEach(c => { if (c.textContent === word.en) c.classList.add('correct'); });
+        limitHit = registerMistake(() => showRestartScreen(startQuiz));
       }
       [...optGrid.children].forEach(c => { if (c !== btn) c.classList.add('dim'); });
+      if (limitHit) return; // showRestartScreen will take over after its own delay
       setTimeout(() => {
         if (quizIdx < quizOrder.length - 1) { quizIdx++; renderQuiz(); }
         else finishQuiz();
@@ -354,11 +401,13 @@ function startListen() {
   listenIdx = 0;
   listenCorrect = 0;
   listenOrder = shuffle(currentUnit.words);
+  resetMistakes();
   showScreen('screen-listen');
   renderListen();
 }
 
 function renderListen() {
+  updateMistakeDots();
   const word = listenOrder[listenIdx];
   document.getElementById('listenProgress').textContent = `${listenIdx + 1}/${listenOrder.length}`;
 
@@ -377,11 +426,14 @@ function renderListen() {
       answered = true;
       const correct = opt === word.lt;
       btn.classList.add(correct ? 'correct' : 'wrong');
+      let limitHit = false;
       if (correct) listenCorrect++;
       else {
         [...optGrid.children].forEach(c => { if (c.textContent === word.lt) c.classList.add('correct'); });
+        limitHit = registerMistake(() => showRestartScreen(startListen));
       }
       [...optGrid.children].forEach(c => { if (c !== btn) c.classList.add('dim'); });
+      if (limitHit) return;
       setTimeout(() => {
         if (listenIdx < listenOrder.length - 1) { listenIdx++; renderListen(); }
         else finishListen();
@@ -421,11 +473,13 @@ function startMatch() {
   matchPairs = shuffle(matchPairs);
   matchSelected = null;
   matchFound = 0;
+  resetMistakes();
   showScreen('screen-match');
   renderMatch();
 }
 
 function renderMatch() {
+  updateMistakeDots();
   document.getElementById('matchProgress').textContent = `${matchFound}/6`;
   const grid = document.getElementById('matchGrid');
   grid.innerHTML = '';
@@ -477,11 +531,16 @@ function selectMatchTile(idx) {
     tiles[idx].classList.add('selected');
     tiles[matchSelected].classList.add('shake');
     tiles[idx].classList.add('shake');
+    const limitHit = registerMistake(() => showRestartScreen(startMatch));
     setTimeout(() => {
       tiles[matchSelected].classList.remove('selected', 'shake');
       tiles[idx].classList.remove('selected', 'shake');
       matchSelected = null;
     }, 450);
+    if (limitHit) {
+      // Disable further taps while the restart screen takes over.
+      document.querySelectorAll('.match-tile').forEach(t => t.onclick = null);
+    }
   }
 }
 
